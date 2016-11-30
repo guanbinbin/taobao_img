@@ -8,13 +8,17 @@ import (
 	"github.com/hunterhug/go_tool/spider"
 	"github.com/hunterhug/go_tool/spider/query"
 	"github.com/hunterhug/go_tool/util"
+	"regexp"
 	"strings"
 )
 
 func main() {
+	fmt.Println(`欢迎使用淘宝天猫图片下载小工具，在同级目录写入链接进taobao.txt，运行EXE即可`)
+	fmt.Println("链接如：tmall.com/item.htm?id=523350171126&skuId=3120562159704,tmall")
+	fmt.Println("---------------以上详情页中图片会保存在tmall目录-----------------------")
 	c, e := util.ReadfromFile("./taobao.txt")
 	if e != nil {
-		fmt.Println("��taobao.txt����")
+		fmt.Println("打开taobao.txt出错")
 	} else {
 		urls := strings.Split(string(c), "\n")
 		for _, url := range urls {
@@ -23,6 +27,8 @@ func main() {
 		}
 
 	}
+	fmt.Println("请手动关闭选框...")
+	util.Sleep(100)
 }
 
 func md55(s string) string {
@@ -46,7 +52,11 @@ func downlod(urlmany string) {
 
 	} else {
 		s.Url = url
-		s.NewHeader("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36", "detail.tmall.com", nil)
+		dudu := "detail.tmall.com"
+		if strings.Contains(url, "item.taobao.com") {
+			dudu = "item.taobao.com"
+		}
+		s.NewHeader("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36", dudu, nil)
 		content, err := s.Get()
 		if err != nil {
 
@@ -56,27 +66,41 @@ func downlod(urlmany string) {
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
+				//fmt.Println(string(content))
 				docm.Find("img").Each(func(num int, node *goquery.Selection) {
-					util.Sleep(2)
-					fmt.Println("��ͣ����")
 					img, e := node.Attr("src")
+					if e == false {
+						img, e = node.Attr("data-src")
+					}
 					if e && img != "" {
-						temp := strings.Replace(img, "60x60", "720x720", -1)
-						temp = strings.Replace(temp, "430x430", "720x720", -1)
-						fmt.Println("����" + temp)
-						s.Url = "http:" + temp
-						imgsrc, e := s.Get()
-						if e != nil {
-							fmt.Println("���س���" + temp + ":" + e.Error())
+						if strings.Contains(img, ".gif") {
+							return
 						}
+						fmt.Println("原始文件：" + img)
+						r, _ := regexp.Compile(`([\d]{1,4}x[\d]{1,4})`)
+						imgdudu := r.FindStringSubmatch(img)
+						sizes := "720*720"
+						if len(imgdudu) == 2 {
+							sizes = imgdudu[1]
+						}
+						temp := strings.Replace(img, sizes, "720x720", -1)
 						filename := md55(temp)
 						if util.FileExist(dir + "/" + filename + ".jpg") {
-							fmt.Println("�ļ����ڣ�" + dir + "/" + filename)
+							fmt.Println("文件存在：" + dir + "/" + filename)
 						} else {
+							fmt.Println("下载:" + temp)
+							s.Url = "http:" + temp
+							imgsrc, e := s.Get()
+							if e != nil {
+								fmt.Println("下载出错" + temp + ":" + e.Error())
+								return
+							}
 							e = util.SaveToFile(dir+"/"+filename+".jpg", imgsrc)
 							if e == nil {
-								fmt.Println("�ɹ�������" + dir + "/" + filename)
+								fmt.Println("成功保存在" + dir + "/" + filename)
 							}
+							util.Sleep(2)
+							fmt.Println("暂停两秒")
 						}
 					}
 				})
