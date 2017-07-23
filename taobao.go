@@ -1,41 +1,70 @@
+/*
+Copyright 2017 by GoSpider author.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package main
 
 import (
-	"crypto/md5"
-	"encoding/hex"
+	"flag"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/hunterhug/go_tool/spider"
-	"github.com/hunterhug/go_tool/spider/query"
-	"github.com/hunterhug/go_tool/util"
+	"github.com/hunterhug/GoSpider/query"
+	"github.com/hunterhug/GoSpider/spider"
+	"github.com/hunterhug/GoSpider/util"
 	"regexp"
 	"strings"
 )
 
+var txt = flag.String("config", "taobao.txt", "你需要指定taobao.txt的文件地址")
+
 func main() {
-	fmt.Println(`欢迎使用淘宝天猫图片下载小工具，在同级目录写入链接进taobao.txt，运行EXE即可`)
-	fmt.Println("链接如：tmall.com/item.htm?id=523350171126&skuId=3120562159704,tmall")
-	fmt.Println("---------------以上详情页中图片会保存在tmall目录-----------------------")
-	c, e := util.ReadfromFile("./taobao.txt")
+	flag.Parse()
+	spider.SetGlobalTimeout(2)
+	//spider.SetLogLevel("debug")
+	fmt.Println(`
+	-------------------------------
+	欢迎使用淘宝天猫图片下载小工具
+	需指定taobao.txt所在位置
+	taobao.txt按行写入 淘宝链接,文件夹
+	使用方法：
+	go run taobao.go -config=taobao.txt
+	taobao.exe -config=taobao.txt
+
+	联系QQ：569929309
+	一只尼玛
+	2016
+	----------------------------------
+	`)
+	fmt.Println("链接如：https://item.taobao.com/item.htm?id=40066362090,taobao")
+	fmt.Println("---------------以上详情页中图片会保存在taobao目录-----------------------")
+	c, e := util.ReadfromFile(*txt)
 	if e != nil {
-		fmt.Println("打开taobao.txt出错")
+		fmt.Println("打开taobao.txt出错:" + e.Error())
+		flag.PrintDefaults()
 	} else {
 		urls := strings.Split(string(c), "\n")
 		for _, url := range urls {
 			url := strings.Replace(strings.TrimSpace(url), "\r", "", -1)
+			if strings.HasPrefix(url, "#") {
+				fmt.Println("跳过" + url)
+				continue
+			}
+			fmt.Println("下载:" + url)
 			downlod(url)
 		}
 
 	}
 	fmt.Println("请手动关闭选框...")
 	util.Sleep(100)
-}
-
-func md55(s string) string {
-	h := md5.New()
-	h.Write([]byte(s))
-	rs := hex.EncodeToString(h.Sum(nil))
-	return rs
 }
 
 func downlod(urlmany string) {
@@ -45,18 +74,21 @@ func downlod(urlmany string) {
 	if len(temp) >= 2 {
 		filename = temp[1]
 	}
-	dir := "./" + filename
+	dir := "./image/" + filename
 	util.MakeDir(dir)
 	s, e := spider.NewSpider(nil)
 	if e != nil {
 
 	} else {
+		// url:http://a.com   https://a.com/jj
 		s.Url = url
-		dudu := "detail.tmall.com"
-		if strings.Contains(url, "item.taobao.com") {
-			dudu = "item.taobao.com"
+		urlhost := strings.Split(url, "//")
+		if len(urlhost) != 2 {
+			fmt.Println("网站错误：开头必须为http://或https://")
+			return
 		}
-		s.NewHeader("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36", dudu, nil)
+		dudu := strings.Split(urlhost[1], "/")[0]
+		s.NewHeader("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36", dudu, url)
 		content, err := s.Get()
 		if err != nil {
 
@@ -77,19 +109,25 @@ func downlod(urlmany string) {
 							return
 						}
 						fmt.Println("原始文件：" + img)
-						r, _ := regexp.Compile(`([\d]{1,4}x[\d]{1,4})`)
-						imgdudu := r.FindStringSubmatch(img)
-						sizes := "720*720"
-						if len(imgdudu) == 2 {
-							sizes = imgdudu[1]
+						temp := img
+						if strings.Contains(url, "taobao.com") || strings.Contains(url, "tmall.com") {
+							r, _ := regexp.Compile(`([\d]{1,4}x[\d]{1,4})`)
+							imgdudu := r.FindStringSubmatch(img)
+							sizes := "720*720"
+							if len(imgdudu) == 2 {
+								sizes = imgdudu[1]
+							}
+							temp = strings.Replace(img, sizes, "720x720", -1)
 						}
-						temp := strings.Replace(img, sizes, "720x720", -1)
-						filename := md55(temp)
+						filename := util.Md5(temp)
 						if util.FileExist(dir + "/" + filename + ".jpg") {
 							fmt.Println("文件存在：" + dir + "/" + filename)
 						} else {
 							fmt.Println("下载:" + temp)
-							s.Url = "http:" + temp
+							s.Url = temp
+							if strings.HasPrefix(temp, "//") {
+								s.Url = "http:" + temp
+							}
 							imgsrc, e := s.Get()
 							if e != nil {
 								fmt.Println("下载出错" + temp + ":" + e.Error())
@@ -99,7 +137,7 @@ func downlod(urlmany string) {
 							if e == nil {
 								fmt.Println("成功保存在" + dir + "/" + filename)
 							}
-							util.Sleep(2)
+							util.Sleep(1)
 							fmt.Println("暂停两秒")
 						}
 					}
