@@ -1,5 +1,5 @@
 /*
-Copyright 2017 by GoSpider author.
+Copyright 2017 by Gominer author.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -16,20 +16,21 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/hunterhug/GoSpider/query"
-	"github.com/hunterhug/GoSpider/spider"
-	"github.com/hunterhug/GoSpider/util"
 	"regexp"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/hunterhug/marmot/expert"
+	"github.com/hunterhug/marmot/miner"
+	"github.com/hunterhug/parrot/util"
 )
 
 var txt = flag.String("config", "taobao.txt", "你需要指定taobao.txt的文件地址")
 
 func main() {
 	flag.Parse()
-	spider.SetGlobalTimeout(2)
-	//spider.SetLogLevel("debug")
+	miner.SetGlobalTimeout(2)
+	//miner.SetLogLevel("debug")
 	fmt.Println(`
 	-------------------------------
 	欢迎使用淘宝天猫图片下载小工具
@@ -38,10 +39,8 @@ func main() {
 	使用方法：
 	go run taobao.go -config=taobao.txt
 	taobao.exe -config=taobao.txt
-
-	联系QQ：569929309
-	一只尼玛
-	2016
+	
+	//https://github.com/hunterhug/taobao_img
 	----------------------------------
 	`)
 	fmt.Println("链接如：https://item.taobao.com/item.htm?id=40066362090,taobao")
@@ -76,7 +75,7 @@ func downlod(urlmany string) {
 	}
 	dir := "./image/" + filename
 	util.MakeDir(dir)
-	s, e := spider.NewSpider(nil)
+	s, e := miner.NewWorker(nil)
 	if e != nil {
 
 	} else {
@@ -94,7 +93,7 @@ func downlod(urlmany string) {
 
 		} else {
 			//fmt.Println(string(content))
-			docm, err := query.QueryBytes(content)
+			docm, err := expert.QueryBytes(content)
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {

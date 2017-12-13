@@ -6,19 +6,19 @@ You Just Need Clone This Rep, And Get `Golang` Env, Just `go run main.go`
 
 Or You can just Click `taobao.exe`,And `taobao.txt` write url and file keep dir
 
+Depend on [https://github.com/hunterhug/marmot](https://github.com/hunterhug/marmot)
+
 ## Chinese
 
 ```
 	-------------------------------
-	»¶Ó­Ê¹ÓÃÌÔ±¦ÌìÃ¨Í¼Æ¬ÏÂÔØĞ¡¹¤¾ß
-	ĞèÖ¸¶¨taobao.txtËùÔÚÎ»ÖÃ
-	taobao.txt°´ĞĞĞ´Èë ÌÔ±¦Á´½Ó,ÎÄ¼ş¼Ğ
-	Ê¹ÓÃ·½·¨£º
+	æ¬¢è¿ä½¿ç”¨æ·˜å®å¤©çŒ«å›¾ç‰‡ä¸‹è½½å°å·¥å…·
+	éœ€æŒ‡å®štaobao.txtæ‰€åœ¨ä½ç½®
+	taobao.txtæŒ‰è¡Œå†™å…¥ æ·˜å®é“¾æ¥,æ–‡ä»¶å¤¹
+	ä½¿ç”¨æ–¹æ³•ï¼š
 	go run taobao.go -config=taobao.txt
 	taobao.exe -config=taobao.txt
 
-	ÁªÏµQQ£º569929309
-	Ò»Ö»ÄáÂê
-	2016
+	//https://github.com/hunterhug/taobao_img
 	----------------------------------
 ```
